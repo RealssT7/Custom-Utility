@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEditor.Toolbars;
-using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 namespace CustomUtility.PlayUtility.Editor
@@ -11,36 +10,22 @@ namespace CustomUtility.PlayUtility.Editor
     /// Adds a "Play from Here" button to the Scene View toolbar, allowing the user to
     /// start play mode from the current camera position in the editor.
     /// </summary>
-    [Overlay(typeof(SceneView), "Play from Here", true)]
+    [Overlay(typeof(SceneView), "Play from Here", true, defaultDockZone = DockZone.LeftToolbar, defaultLayout = Layout.VerticalToolbar)]
     internal class PlayFromHereUtility : ToolbarOverlay
     {
         internal PlayFromHereUtility() : base(CreatePlayButton.ID)
         {
         }
-        
-        public override VisualElement CreatePanelContent()
-        {
-            var root = new VisualElement
-            {
-                name = "PlayFromHerePanel",
-                style =
-                {
-                    flexDirection = FlexDirection.Column,
-                    paddingTop = 10,
-                    paddingLeft = 10
-                }
-            };
-            
-            return root;
-        }
 
+        protected override Layout supportedLayouts => Layout.VerticalToolbar;
+        
         /// <summary>
         /// Creates the play button in the toolbar overlay.
         /// </summary>
         [EditorToolbarElement(CreatePlayButton.ID, typeof(SceneView))]
         private class CreatePlayButton : EditorToolbarButton
         {
-            // Constants to store the data.
+            // Constants to store the static data.
             public const string ID = "PlayFromHere/PlayButton";
             private const string PlayerTag = "Player";
             private const string PlayerObjectName = "PlayerCharacter";
