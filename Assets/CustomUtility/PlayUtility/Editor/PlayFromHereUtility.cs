@@ -10,7 +10,7 @@ namespace CustomUtility.PlayUtility.Editor
     /// Adds a "Play from Here" button to the Scene View toolbar, allowing the user to
     /// start play mode from the current camera position in the editor.
     /// </summary>
-    [Overlay(typeof(SceneView), "Play from Here", true, defaultDockZone = DockZone.LeftToolbar, defaultLayout = Layout.VerticalToolbar)]
+    [Overlay(typeof(SceneView), "Play from Here", true)]
     internal class PlayFromHereUtility : ToolbarOverlay
     {
         internal PlayFromHereUtility() : base(CreatePlayButton.ID)
