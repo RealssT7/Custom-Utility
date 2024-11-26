@@ -1,14 +1,14 @@
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEditor.Toolbars;
+using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace CustomUtility.PlayUtility.Editor
 {
     /// <summary>
-    /// Adds a "Play from Here" button to the Scene View toolbar, allowing the user to
-    /// start play mode from the current camera position in the editor.
+    ///     Adds a "Play from Here" button to the Scene View toolbar, allowing the user to
+    ///     start play mode from the current camera position in the editor.
     /// </summary>
     [Overlay(typeof(SceneView), "Play from Here", true)]
     internal class PlayFromHereUtility : ToolbarOverlay
@@ -18,11 +18,11 @@ namespace CustomUtility.PlayUtility.Editor
         }
 
         protected override Layout supportedLayouts => Layout.VerticalToolbar;
-        
+
         /// <summary>
-        /// Creates the play button in the toolbar overlay.
+        ///     Creates the play button in the toolbar overlay.
         /// </summary>
-        [EditorToolbarElement(CreatePlayButton.ID, typeof(SceneView))]
+        [EditorToolbarElement(ID, typeof(SceneView))]
         private class CreatePlayButton : EditorToolbarButton
         {
             // Constants to store the static data.
@@ -30,12 +30,13 @@ namespace CustomUtility.PlayUtility.Editor
             private const string PlayerTag = "Player";
             private const string PlayerObjectName = "PlayerCharacter";
             private const string PlayIconPath = "CustomUtility_Play_Icon_Play";
+
             private const string Tooltip = "Play from the current editor camera position.\n" +
                                            "To use this, rename player to <color=green>'PlayerCharacter'</color> or assign <color=green>'Player' Tag</color>.\n" +
                                            "Another way is to add the <color=green>'PlayerCustomPlay'</color> component to the player object.";
 
             /// <summary>
-            /// Initializes the toolbar overlay button.
+            ///     Initializes the toolbar overlay button.
             /// </summary>
             internal CreatePlayButton()
             {
@@ -45,7 +46,7 @@ namespace CustomUtility.PlayUtility.Editor
             }
 
             /// <summary>
-            /// Event handler for when the overlay button is clicked.
+            ///     Event handler for when the overlay button is clicked.
             /// </summary>
             private static void OnClick()
             {
@@ -54,7 +55,8 @@ namespace CustomUtility.PlayUtility.Editor
                 var playerObj = FindPlayerObject();
                 if (playerObj == null)
                 {
-                    Debug.LogWarning($"Player object not found. Ensure it is named '{PlayerObjectName}', has the '{PlayerTag}' tag, or uses the 'PlayerCustomPlay' component.");
+                    Debug.LogWarning(
+                        $"Player object not found. Ensure it is named '{PlayerObjectName}', has the '{PlayerTag}' tag, or uses the 'PlayerCustomPlay' component.");
                     return;
                 }
 
@@ -62,7 +64,7 @@ namespace CustomUtility.PlayUtility.Editor
             }
 
             /// <summary>
-            /// Attempts to find the player object in the scene by component, tag, or name.
+            ///     Attempts to find the player object in the scene by component, tag, or name.
             /// </summary>
             /// <returns>The player GameObject if found, otherwise null.</returns>
             private static GameObject FindPlayerObject()
@@ -70,12 +72,12 @@ namespace CustomUtility.PlayUtility.Editor
                 // Try to find the player by PlayerCustomPlay component first, then tag, and finally by name.
                 var playerComponent = Object.FindObjectOfType<PlayerCustomPlay>();
                 return playerComponent?.gameObject
-                    ?? GameObject.FindWithTag(PlayerTag)
-                    ?? GameObject.Find(PlayerObjectName);
+                       ?? GameObject.FindWithTag(PlayerTag)
+                       ?? GameObject.Find(PlayerObjectName);
             }
 
             /// <summary>
-            /// Sets the player object position, utilizing PlayerCustomPlay if available.
+            ///     Sets the player object position, utilizing PlayerCustomPlay if available.
             /// </summary>
             /// <param name="playerObj">The player GameObject.</param>
             /// <param name="position">The new position to set.</param>
@@ -83,13 +85,9 @@ namespace CustomUtility.PlayUtility.Editor
             {
                 var playerComponent = playerObj.GetComponent<PlayerCustomPlay>();
                 if (playerComponent != null)
-                {
                     playerComponent.SetPosition(position);
-                }
                 else
-                {
                     playerObj.transform.position = position;
-                }
             }
         }
     }
