@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   addButtonStyle: AddButton
   buttonOffStyle: ButtonOff
-  buttonSelectedStyle: ButtonSelected
+  headerStyle: Header
