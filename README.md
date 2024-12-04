@@ -2,7 +2,7 @@
 
 ## Overview
 
-Custom-Utility is a Unity editor extension that provides various utility tools to enhance the workflow of game developers. This toolset includes selection utilities and a "Play from Here" utility.
+Custom-Utility is a Unity editor extension that provides various utility tools to enhance game developers' workflows. This toolset includes a "Selection Utility" and a "Play from Here Utility".
 
 ## Features
 
@@ -17,18 +17,20 @@ Custom-Utility is a Unity editor extension that provides various utility tools t
 ## Usage
 
 ### Selection Utility
+Inspire from this https://assetstore.unity.com/packages/tools/utilities/free-ui-utility-206817#description unity asset.
 
 1. Open the Custom Utility window from the Unity Editor menu.
 2. Use the selection options to filter GameObjects by name, tag, layer, or component.
 3. The selected GameObjects will be highlighted in the scene.
 
 ### Play from Here Utility
+Similar to the Unreal Play from here function, this will use the camera's current position from the scene view instead.
 
 1. Ensure your player GameObject is named "PlayerCharacter", tagged as "Player", or has the `PlayerCustomPlay` component.
-2. In the Scene View toolbar, click the "Play from Here" button.
+2. click the "Play from Here" button in the Scene View toolbar.
 3. The game will start from the current camera position in the editor.
 
-(If the overlay button not appear, go to the overlay menu on the scene view window.)
+(If the overlay button does not appear, go to the overlay menu on the scene view window.)
 
 ## License
 
