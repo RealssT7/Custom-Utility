@@ -50,7 +50,11 @@ namespace CustomUtility.PlayUtility.Editor
             /// </summary>
             private static void OnClick()
             {
-                if (!EditorApplication.isPlaying) return;
+                if (!EditorApplication.isPlaying)
+                {
+                    EditorApplication.isPlaying = true;
+                    return;
+                }
 
                 var playerObj = FindPlayerObject();
                 if (playerObj == null)
