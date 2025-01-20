@@ -10,3 +10,4 @@
 !*.meta
 !package.json
 !README.md
+!.gitignore
