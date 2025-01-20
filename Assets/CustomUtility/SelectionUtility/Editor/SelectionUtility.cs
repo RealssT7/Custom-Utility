@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-using static UnityEditor.Selection;
 using Object = UnityEngine.Object;
 
 namespace CustomUtility.SelectionUtility.Editor
@@ -18,18 +17,19 @@ namespace CustomUtility.SelectionUtility.Editor
         #region Enums Data
 
         /// <summary>
-        ///     Enum representing the tool category (Select or Rename).
+        ///     Enum representing the tool category.
         /// </summary>
         private enum ToolCategory
         {
             Select,
-            Rename
+            Rename,
+            Replace
         }
 
         private ToolCategory _currentToolCategory;
 
         /// <summary>
-        ///     Enum representing the selection type (Component or Name).
+        ///     Enum representing the selection type.
         /// </summary>
         private enum SelectionType
         {
@@ -42,15 +42,15 @@ namespace CustomUtility.SelectionUtility.Editor
         private SelectionType _currentSelectionType;
 
         /// <summary>
-        ///     Enum representing the search mode (Auto or Manual).
+        ///     Enum representing the logic mode.
         /// </summary>
-        private enum SearchMode
+        private enum LogicMode
         {
             Auto,
             Manual
         }
 
-        private SearchMode _currentSearchMode;
+        private LogicMode _currentLogicMode;
 
         /// <summary>
         ///     Enum representing the selection name type for filtering.
@@ -97,7 +97,17 @@ namespace CustomUtility.SelectionUtility.Editor
         private static readonly Vector2 MaxSize = new(500, 1080); // Maximum window size.
 
         [SerializeField] private List<GameObject> parents; // List of parent GameObjects for manual selection.
-        [SerializeField] private List<GameObject> results; // List of resulting GameObjects after filtering.
+        [SerializeField] private List<GameObject> selections; // List of resulting GameObjects after filtering.
+
+        [SerializeField] private GameObject replacementObject;
+        [SerializeField] private bool keepPosition = true; // Flag to keep the original position when replacing.
+        [SerializeField] private bool keepRotation = true; // Flag to keep the original rotation when replacing.
+        [SerializeField] private bool keepScale = true; // Flag to keep the original scale when replacing.
+        [SerializeField] private bool keepParent = true; // Flag to keep the original parent when replacing.
+        [SerializeField] private bool keepName; // Flag to keep the original name when replacing.
+        [SerializeField] private bool keepTag; // Flag to keep the original tags when replacing.
+        [SerializeField] private bool keepLayer; // Flag to keep the original layer when replacing.
+        [SerializeField] private bool keepComponent; // Flag to keep the original components when replacing.
 
         private string[] _cachedComponent, _cachedTag; // Cached component type & tag names.
         private SelectionUtilityEditorData _editorData; // Custom editor skin and data.
@@ -122,6 +132,17 @@ namespace CustomUtility.SelectionUtility.Editor
             _editorData = Resources.Load<SelectionUtilityEditorData>("SelectionUtilitiesEditorData");
             _cachedComponent = GetAvailableComponentTypes().Select(type => type.Name).ToArray();
             _cachedTag = InternalEditorUtility.tags;
+
+            Selection.selectionChanged += OnSelectionChanged;
+            OnSelectionChanged(); // Force update the selection list
+        }
+
+        /// <summary>
+        ///     Cleans up resources when the window is closed.
+        /// </summary>
+        private void OnDisable()
+        {
+            Selection.selectionChanged -= OnSelectionChanged;
         }
 
         #endregion
@@ -129,9 +150,9 @@ namespace CustomUtility.SelectionUtility.Editor
         #region EditorWindow
 
         /// <summary>
-        ///     Opens the Component Selection Utility window from the Unity menu.
+        ///     Opens the Selection Utility window from the Unity menu.
         /// </summary>
-        [MenuItem("Custom Utility/Component Selection")]
+        [MenuItem("Custom Utility/Selection Utility")]
         private static void OpenWindow()
         {
             var window = GetWindow(typeof(SelectionUtility));
@@ -153,7 +174,7 @@ namespace CustomUtility.SelectionUtility.Editor
 
             float width = Screen.width;
 
-            EditorGUILayout.LabelField("Component Selection Utility", _skin.GetStyle(_editorData.headerStyle),
+            EditorGUILayout.LabelField("Selection Utility", _skin.GetStyle(_editorData.headerStyle),
                 GUILayout.MaxWidth(width), GUILayout.Height(PropertySpace));
             EditorGUILayout.EndHorizontal();
 
@@ -192,6 +213,9 @@ namespace CustomUtility.SelectionUtility.Editor
                 case ToolCategory.Rename:
                     DrawRenamingTools();
                     break;
+                case ToolCategory.Replace:
+                    DrawReplacingTools();
+                    break;
             }
 
             GUILayout.Space(FieldSpace);
@@ -201,29 +225,35 @@ namespace CustomUtility.SelectionUtility.Editor
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(FieldSpace);
 
-            DrawResultObjectList();
+            DrawSelectedObjectList();
 
             GUILayout.Space(FieldSpace);
             EditorGUILayout.EndHorizontal();
         }
 
         /// <summary>
-        ///     Draws the list of resulting GameObjects after filtering.
+        ///     Draws the list of selecting GameObjects.
         /// </summary>
-        private void DrawResultObjectList()
+        private void DrawSelectedObjectList()
         {
-            EditorGUILayout.LabelField("Results:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
-            var serialProp = _serialObj.FindProperty("results");
+            EditorGUILayout.LabelField("Selection:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
+            var serialProp = _serialObj.FindProperty("selections");
             EditorGUILayout.PropertyField(serialProp, true);
+        }
+
+        /// <summary>
+        ///     Handles the selection change event.
+        /// </summary>
+        private void OnSelectionChanged()
+        {
+            selections = Selection.objects.Select(obj => (GameObject)obj).ToList();
+            if (_serialObj != null && _serialObj.targetObject != null) _serialObj.Update();
         }
 
         #endregion
 
-        #region Selection Tools
+        #region Selection Tool
 
-        /// <summary>
-        ///     Draws the UI elements for selecting GameObjects.
-        /// </summary>
         private void DrawSelectingTools()
         {
             EditorGUILayout.LabelField("Select By:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
@@ -261,7 +291,7 @@ namespace CustomUtility.SelectionUtility.Editor
 
             DrawSearchModeSelection();
 
-            if (_currentSearchMode == SearchMode.Manual)
+            if (_currentLogicMode == LogicMode.Manual)
             {
                 GUILayout.Space(FieldSpace);
                 EditorGUILayout.EndHorizontal();
@@ -283,9 +313,6 @@ namespace CustomUtility.SelectionUtility.Editor
             DrawSelectButton();
         }
 
-        /// <summary>
-        ///     Draws the UI elements for selecting GameObjects by component type.
-        /// </summary>
         private void DrawComponentSelection()
         {
             EditorGUILayout.LabelField("Component:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
@@ -320,9 +347,6 @@ namespace CustomUtility.SelectionUtility.Editor
             EditorGUILayout.EndHorizontal();
         }
 
-        /// <summary>
-        ///     Draws the UI elements for selecting GameObjects by name.
-        /// </summary>
         private void DrawNameSelection()
         {
             EditorGUILayout.LabelField("Text Value:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
@@ -334,36 +358,24 @@ namespace CustomUtility.SelectionUtility.Editor
             _currentSelectionNameType = (SelectionNameType)EditorGUILayout.EnumPopup(_currentSelectionNameType);
         }
 
-        /// <summary>
-        ///     Draws the UI elements for selecting GameObjects by tag.
-        /// </summary>
         private void DrawTagSelection()
         {
             EditorGUILayout.LabelField("Tag:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
             _selectPopUpIndex = EditorGUILayout.Popup(_selectPopUpIndex, _cachedTag, GUILayout.ExpandWidth(true));
         }
 
-        /// <summary>
-        ///     Draws the UI elements for selecting GameObjects by layer.
-        /// </summary>
         private void DrawLayerSelection()
         {
             EditorGUILayout.LabelField("Layer:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
             _selectPopUpIndex = EditorGUILayout.LayerField(_selectPopUpIndex, GUILayout.ExpandWidth(true));
         }
 
-        /// <summary>
-        ///     Draws the UI elements for selecting the search mode.
-        /// </summary>
         private void DrawSearchModeSelection()
         {
             EditorGUILayout.LabelField("Mode:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
-            _currentSearchMode = (SearchMode)EditorGUILayout.EnumPopup(_currentSearchMode);
+            _currentLogicMode = (LogicMode)EditorGUILayout.EnumPopup(_currentLogicMode);
         }
 
-        /// <summary>
-        ///     Draws the UI elements for manual search mode.
-        /// </summary>
         private void DrawManualSearchMode()
         {
             EditorGUILayout.LabelField("Select In:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
@@ -371,19 +383,16 @@ namespace CustomUtility.SelectionUtility.Editor
             EditorGUILayout.PropertyField(serialProp, true);
         }
 
-        /// <summary>
-        ///     Draws the button for selecting GameObjects based on the criteria.
-        /// </summary>
         private void DrawSelectButton()
         {
-            if (GUILayout.Button("SELECT", _skin.GetStyle(_editorData.addButtonStyle), GUILayout.Height(PropertySpace),
-                    GUILayout.ExpandWidth(true)))
+            if (GUILayout.Button("OBJECT SELECTION", _skin.GetStyle(_editorData.addButtonStyle),
+                    GUILayout.Height(ButtonHeight), GUILayout.ExpandWidth(true)))
             {
-                objects = null;
-                results = new List<GameObject>();
+                Selection.objects = null;
+                selections = new List<GameObject>();
                 var componentType = GetComponentTypeFromDropdown();
 
-                if (_currentSearchMode == SearchMode.Manual)
+                if (_currentLogicMode == LogicMode.Manual)
                 {
                     if (parents.Count == 0)
                     {
@@ -395,23 +404,23 @@ namespace CustomUtility.SelectionUtility.Editor
                     {
                         case SelectionType.Component:
                             foreach (var go in parents)
-                                results.AddRange(go.GetComponentsInChildren(componentType)
+                                selections.AddRange(go.GetComponentsInChildren(componentType)
                                     .Select(component => component.gameObject));
                             break;
                         case SelectionType.Name:
                             foreach (var go in parents)
-                                results.AddRange(go.GetComponentsInChildren<Transform>()
+                                selections.AddRange(go.GetComponentsInChildren<Transform>()
                                     .Where(transform => IsMatchingNameRules(transform.name))
                                     .Select(transform => transform.gameObject));
                             break;
                         case SelectionType.Tag:
                             foreach (var go in parents)
-                                results.AddRange(go.GetComponentsInChildren<GameObject>()
+                                selections.AddRange(go.GetComponentsInChildren<GameObject>()
                                     .Where(child => child.CompareTag(_cachedTag[_selectPopUpIndex])));
                             break;
                         case SelectionType.Layer:
                             foreach (var go in parents)
-                                results.AddRange(go.GetComponentsInChildren<GameObject>()
+                                selections.AddRange(go.GetComponentsInChildren<GameObject>()
                                     .Where(child => child.layer == _selectPopUpIndex));
                             break;
                     }
@@ -421,26 +430,26 @@ namespace CustomUtility.SelectionUtility.Editor
                     switch (_currentSelectionType)
                     {
                         case SelectionType.Component:
-                            results.AddRange(FindObjectsOfType(componentType)
+                            selections.AddRange(FindObjectsOfType(componentType)
                                 .Select(component => ((Component)component).gameObject));
                             break;
                         case SelectionType.Name:
-                            results.AddRange(FindObjectsOfType<Transform>()
+                            selections.AddRange(FindObjectsOfType<Transform>()
                                 .Where(transform => IsMatchingNameRules(transform.name))
                                 .Select(transform => transform.gameObject));
                             break;
                         case SelectionType.Tag:
-                            results.AddRange(FindObjectsOfType<GameObject>()
+                            selections.AddRange(FindObjectsOfType<GameObject>()
                                 .Where(go => go.CompareTag(_cachedTag[_selectPopUpIndex])));
                             break;
                         case SelectionType.Layer:
-                            results.AddRange(FindObjectsOfType<GameObject>()
+                            selections.AddRange(FindObjectsOfType<GameObject>()
                                 .Where(go => go.layer == _selectPopUpIndex));
                             break;
                     }
                 }
 
-                objects = results.ToArray<Object>();
+                Selection.objects = selections.ToArray<Object>();
                 _serialObj.Update();
             }
         }
@@ -449,9 +458,6 @@ namespace CustomUtility.SelectionUtility.Editor
 
         #region RenamingTool
 
-        /// <summary>
-        ///     Draws the UI elements for renaming GameObjects.
-        /// </summary>
         private void DrawRenamingTools()
         {
             EditorGUILayout.LabelField("Type:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
@@ -510,22 +516,18 @@ namespace CustomUtility.SelectionUtility.Editor
             DrawRenameButton();
         }
 
-        /// <summary>
-        ///     Draws the button for renaming the selected GameObjects.
-        /// </summary>
         private void DrawRenameButton()
         {
             if (GUILayout.Button("RENAME SELECTION", _skin.GetStyle(_editorData.addButtonStyle),
-                    GUILayout.Height(ButtonHeight),
-                    GUILayout.ExpandWidth(true)))
+                    GUILayout.Height(ButtonHeight), GUILayout.ExpandWidth(true)))
             {
-                if (objects.Length == 0)
+                if (Selection.objects.Length == 0)
                 {
                     Debug.LogWarning("No objects selected.");
                     return;
                 }
 
-                foreach (var selectedObject in objects)
+                foreach (var selectedObject in Selection.objects)
                 {
                     Undo.RecordObject(selectedObject, selectedObject.name);
                     selectedObject.name = GetNewName(selectedObject.name);
@@ -561,6 +563,125 @@ namespace CustomUtility.SelectionUtility.Editor
             }
 
             return objectName;
+        }
+
+        #endregion
+
+        #region ReplaceTool
+
+        private void DrawReplacingTools()
+        {
+            EditorGUILayout.LabelField("Replace By:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
+            replacementObject = (GameObject)EditorGUILayout.ObjectField(replacementObject, typeof(GameObject), true,
+                GUILayout.ExpandWidth(true));
+
+            GUILayout.Space(FieldSpace);
+            EditorGUILayout.EndHorizontal();
+            GUILayout.Space(FieldSpace);
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(FieldSpace);
+
+            EditorGUILayout.LabelField("Keep Rule:", GUILayout.ExpandWidth(false), GUILayout.MaxWidth(PropertySpace));
+
+            EditorGUILayout.BeginVertical();
+            var defaultWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = PropertySpace;
+
+            keepPosition = EditorGUILayout.Toggle("Position", keepPosition);
+            keepRotation = EditorGUILayout.Toggle("Rotation", keepRotation);
+            keepScale = EditorGUILayout.Toggle("Scale", keepScale);
+            keepParent = EditorGUILayout.Toggle("Parent", keepParent);
+            keepName = EditorGUILayout.Toggle("Name", keepName);
+            keepTag = EditorGUILayout.Toggle("Tag", keepTag);
+            keepLayer = EditorGUILayout.Toggle("Layer", keepLayer);
+            keepComponent = EditorGUILayout.Toggle("Component", keepComponent);
+
+            EditorGUIUtility.labelWidth = defaultWidth;
+            EditorGUILayout.EndVertical();
+
+            GUILayout.Space(FieldSpace);
+            EditorGUILayout.EndHorizontal();
+            GUILayout.Space(FieldSpace);
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(FieldSpace);
+
+            DrawReplaceButton();
+        }
+
+        private void DrawReplaceButton()
+        {
+            if (GUILayout.Button("REPLACE SELECTION", _skin.GetStyle(_editorData.addButtonStyle),
+                    GUILayout.Height(ButtonHeight), GUILayout.ExpandWidth(true)))
+            {
+                if (replacementObject == null)
+                {
+                    Debug.LogWarning("No replacement prefab selected.");
+                    return;
+                }
+
+                if (selections == null || selections.Count == 0)
+                {
+                    Debug.LogWarning("No objects in results to replace.");
+                    return;
+                }
+
+                ReplaceSelectedObjects();
+            }
+        }
+
+        /// <summary>
+        ///     Replaces the selected GameObjects with a new GameObject.
+        /// </summary>
+        private void ReplaceSelectedObjects()
+        {
+            Undo.IncrementCurrentGroup();
+            var undoGroup = Undo.GetCurrentGroup();
+            var newSelections = new List<Object>();
+
+            foreach (var target in selections)
+            {
+                Undo.RecordObject(target, "Replace Object");
+                GameObject replacement;
+
+                if (PrefabUtility.IsPartOfPrefabAsset(replacementObject) ||
+                    PrefabUtility.IsPartOfPrefabInstance(replacementObject))
+                    replacement = (GameObject)PrefabUtility.InstantiatePrefab(replacementObject);
+                else replacement = Instantiate(replacementObject);
+
+                Undo.RegisterCreatedObjectUndo(replacement, "Create Replacement");
+
+                if (keepParent) replacement.transform.SetParent(target.transform.parent, false);
+                if (keepPosition) replacement.transform.position = target.transform.position;
+                if (keepRotation) replacement.transform.rotation = target.transform.rotation;
+                if (keepScale) replacement.transform.localScale = target.transform.localScale;
+                if (keepName) replacement.name = target.name;
+                if (keepTag) replacement.tag = target.tag;
+                if (keepLayer) replacement.layer = target.layer;
+
+                if (keepComponent)
+                    foreach (var component in target.GetComponents<Component>())
+                    {
+                        var existingComponent = replacement.GetComponent(component.GetType());
+
+                        if (existingComponent != null)
+                        {
+                            Undo.RecordObject(existingComponent, "Copy Component Data");
+                            EditorUtility.CopySerialized(component, existingComponent);
+                        }
+                        else
+                        {
+                            var newComponent = replacement.AddComponent(component.GetType());
+                            Undo.RegisterCreatedObjectUndo(newComponent, "Add Component");
+                            EditorUtility.CopySerialized(component, newComponent);
+                        }
+                    }
+
+                Undo.DestroyObjectImmediate(target);
+                newSelections.Add(replacement);
+            }
+
+            Selection.objects = newSelections.ToArray();
+            Undo.CollapseUndoOperations(undoGroup);
         }
 
         #endregion
