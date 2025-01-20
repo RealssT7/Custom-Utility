@@ -1,7 +1,12 @@
 # Ignore everything by default
 *
 
-# Except the CustomUtility folder
+# Except the CustomUtility folder and meta files
 !Assets/
 !Assets/CustomUtility/
 !Assets/CustomUtility/**
+
+# Ensure that .meta files are tracked for assets, package manifest, and readme
+!*.meta
+!package.json
+!README.md
