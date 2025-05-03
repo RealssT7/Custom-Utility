@@ -1,0 +1,39 @@
+#ConsoleContainer {
+    background-color: rgba(30, 30, 30, 0.95);
+    padding: 8px;
+    width: 100%;
+    height: 30%;
+    color: rgb(99, 99, 99);
+    -unity-font: resource('SpaceMono-Regular');
+    -unity-font-definition: resource('SpaceMono-Regular SDF');
+}
+
+.outputText {
+    flex-grow: 1;
+    padding: 4px;
+    -unity-text-align: lower-left;
+}
+
+.inputText:focus {
+}
+
+.inputText {
+    color: rgb(0, 0, 0);
+}
+
+.textInfo {
+    color: rgb(156, 220, 254);
+}
+
+.textSuccess {
+    color: rgb(181, 206, 168);
+}
+
+.textError {
+    color: rgb(244, 135, 113);
+}
+
+.textHelp {
+    color: rgb(55, 192, 177);
+    -unity-font-style: bold-and-italic;
+}

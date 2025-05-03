@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/CustomUtility/ConsoleUtility/Resources/ConsoleUtilityStyle.uss?fileID=7433441132597879392&amp;guid=03dfe7790aabc414b956c118b210816e&amp;type=3#ConsoleUtilityStyle" />
+    <ui:VisualElement name="ConsoleContainer" style="height: 100%;">
+        <ui:VisualElement name="OutputContainer" class="outputText" style="flex-grow: 1;">
+            <ui:Label text="Type &apos;help&apos; to list all commands." name="HelpLabel" class="textHelp" />
+            <ui:ScrollView name="ConsoleOutput" class="outputText" />
+        </ui:VisualElement>
+        <ui:TextField name="ConsoleInput" placeholder-text="Enter command..." class="inputText" />
+    </ui:VisualElement>
+</ui:UXML>
