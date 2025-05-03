@@ -5,9 +5,6 @@
 !Custom-Utility/Assets/CustomUtility/
 !Custom-Utility/Assets/CustomUtility/**
 
-# Ensure .meta files are tracked
-!Custom-Utility/Assets/CustomUtility/*.meta
-
 # Ensure the root files like package.json, README.md, and .gitignore are tracked
 !package.json
 !README.md
