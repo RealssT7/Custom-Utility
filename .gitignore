@@ -1,12 +1,14 @@
 # Ignore everything by default
 *
 
-# Except the CustomUtility folder and meta files
-!Assets/CustomUtility/
-!Assets/CustomUtility/**
+# Except the Custom-Utility/Assets/CustomUtility folder and its contents (including meta files)
+!Custom-Utility/Assets/CustomUtility/
+!Custom-Utility/Assets/CustomUtility/**
 
-# Ensure that .meta files are tracked for assets, package manifest, and readme
-!*.meta
+# Ensure .meta files are tracked
+!Custom-Utility/Assets/CustomUtility/*.meta
+
+# Ensure the root files like package.json, README.md, and .gitignore are tracked
 !package.json
 !README.md
 !.gitignore
