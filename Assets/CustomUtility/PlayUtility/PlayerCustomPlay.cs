@@ -1,13 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-///     Abstract base class for player control, defining a method to set the player's position.
+///     Base class for player control, defining a method to set the player's position.
 /// </summary>
-public abstract class PlayerCustomPlay : MonoBehaviour
+public class PlayerCustomPlay : MonoBehaviour
 {
     /// <summary>
     ///     Custom method to set the player's position.
     /// </summary>
     /// <param name="position">The new position to place the player at.</param>
-    public abstract void SetPosition(Vector3 position);
+    public virtual void SetPosition(Vector3 position) {}
 }
