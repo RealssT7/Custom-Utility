@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using UnityEngine;
 using Vector3 = System.Numerics.Vector3;
 
 namespace  CustomUtility.ConsoleUtility.Editor
@@ -39,7 +38,6 @@ namespace  CustomUtility.ConsoleUtility.Editor
 
             try
             {
-                Debug.Log($"Command: {info.Name}, Target: {info.Target}, Method: {info.Method}, Args: {string.Join(", ", parsedArgs)}");
                 var result = info.Method.Invoke(info.Target, parsedArgs);
                 return result?.ToString() ?? "Command executed.";
             }

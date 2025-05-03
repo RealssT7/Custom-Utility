@@ -7,43 +7,60 @@ namespace CustomUtility.ConsoleUtility
 {
     public class ConsoleUtility : MonoBehaviour
     {
-        private UIDocument _uiDocument;
-        private VisualElement _root;
+        private const string ConsoleUIPath = "ConsoleUtilityUI";
+        private const string PanelSettingsPath = "ConsoleUtilityPanel";
+        private const string InputFieldName = "ConsoleInput";
+        private const string OutputFieldName = "ConsoleOutput";
+        private const string ErrorStyle = "textError";
+        private const string SuccessStyle = "textSuccess";
+        private const string InfoStyle = "textInfo";
+        private const KeyCode ToggleKey = KeyCode.BackQuote;
+        private const KeyCode SubmitKey = KeyCode.Return;
+        
+        private bool _isVisible;
         private TextField _inputField;
         private ScrollView _outputArea;
-        private bool _isVisible;
+        private VisualElement _root;
+        private UIDocument _uiDocument;
 
         private void Awake()
         {
-            _uiDocument = gameObject.AddComponent<UIDocument>();
-
-            var console = Resources.Load<VisualTreeAsset>("ConsoleUtilityUI");
-            var settings = Resources.Load<PanelSettings>("ConsoleUtilityPanel");
-
-            if (console == null || settings == null)
-            {
-                Debug.LogError("Console UI or PanelSettings not found in Resources folder.");
-                enabled = false;
-                return;
-            }
-
-            _uiDocument.visualTreeAsset = console;
-            _uiDocument.panelSettings = settings;
-
-            _root = _uiDocument.rootVisualElement;
-            _inputField = _root.Q<TextField>("ConsoleInput");
-            _outputArea = _root.Q<ScrollView>("ConsoleOutput");
-
-            _inputField.RegisterCallback<KeyDownEvent>(OnKeyDown);
-            _root.style.display = DisplayStyle.None;
+            if (!InitializeUI()) return;
+            RegisterCallbacks();
+            HideConsole();
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.BackQuote))
+            if (Input.GetKeyDown(ToggleKey)) ToggleConsole();
+        }
+
+        private bool InitializeUI()
+        {
+            _uiDocument = gameObject.AddComponent<UIDocument>();
+
+            var uiAsset = Resources.Load<VisualTreeAsset>(ConsoleUIPath);
+            var panelSettings = Resources.Load<PanelSettings>(PanelSettingsPath);
+
+            if (uiAsset == null || panelSettings == null)
             {
-                ToggleConsole();
+                Debug.LogError("Missing Console UI or PanelSettings in Resources.");
+                enabled = false;
+                return false;
             }
+
+            _uiDocument.visualTreeAsset = uiAsset;
+            _uiDocument.panelSettings = panelSettings;
+            _root = _uiDocument.rootVisualElement;
+            _inputField = _root.Q<TextField>(InputFieldName);
+            _outputArea = _root.Q<ScrollView>(OutputFieldName);
+
+            return true;
+        }
+
+        private void RegisterCallbacks()
+        {
+            _inputField.RegisterCallback<KeyDownEvent>(OnKeyDown);
         }
 
         private void ToggleConsole()
@@ -55,37 +72,47 @@ namespace CustomUtility.ConsoleUtility
             else _outputArea.Clear();
         }
 
-        private void OnKeyDown(KeyDownEvent evt)
+        private void HideConsole()
         {
-            if (evt.keyCode is KeyCode.Return or KeyCode.KeypadEnter)
-            {
-                RunCommand(_inputField.text);
-                StartCoroutine(FocusInputField());
-                evt.StopPropagation(); 
-            }
+            _root.style.display = DisplayStyle.None;
+            _isVisible = false;
         }
 
-        private void RunCommand(string input)
+        private void OnKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode != SubmitKey) return;
+
+            ProcessCommand(_inputField.text);
+            StartCoroutine(FocusInputField());
+            evt.StopPropagation();
+        }
+
+        private void ProcessCommand(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                AppendToOutput("Error: Input field is empty. Please enter a command.", "textError");
+                AppendToOutput("Error: Input field is empty. Please enter a command.", ErrorStyle);
                 return;
             }
 
-            AppendToOutput($"> {input}");
-
             var result = CommandParser.Execute(input);
+            var style = GetOutputStyle(result);
 
-            if (result.Contains("Unknown command") || result.Contains("Invalid argument") || result.Contains("No command")) AppendToOutput(result, "textError");
-            else AppendToOutput(result, "textSuccess");
+            AppendToOutput($"> {input}");
+            AppendToOutput(result, style);
         }
 
-        private void AppendToOutput(string message, string styleClass = "textInfo")
+        private void AppendToOutput(string message, string style = InfoStyle)
         {
             var label = new Label(message);
-            label.AddToClassList(styleClass);
+            label.AddToClassList(style);
             _outputArea.Add(label);
+        }
+
+        private static string GetOutputStyle(string result)
+        {
+            if (result.Contains("Unknown command") || result.Contains("Invalid argument")) return ErrorStyle;
+            return SuccessStyle;
         }
 
         private IEnumerator FocusInputField()
@@ -94,7 +121,9 @@ namespace CustomUtility.ConsoleUtility
             _inputField.Blur();
             yield return new WaitForEndOfFrame();
             _inputField.Focus();
-            _outputArea.scrollOffset = new Vector2(0, _outputArea.contentContainer.layout.height * 2);
+
+            var scrollHeight = _outputArea.contentContainer.layout.height * 2;
+            _outputArea.scrollOffset = new Vector2(0, scrollHeight);
         }
     }
 }

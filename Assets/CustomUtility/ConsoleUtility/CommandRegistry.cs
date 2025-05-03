@@ -31,11 +31,8 @@ namespace CustomUtility.ConsoleUtility
                 foreach (var method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 {
                     var attr = method.GetCustomAttribute<Attributes.ConsoleCommandAttribute>();
-                    if (attr != null)
-                    {
-                        RegisterCommand(method, null, attr);
-                        Debug.Log($"Registering static command: {attr.CommandName} from {type.Name}");
-                    }
+                    if (attr == null) continue;
+                    RegisterCommand(method, null, attr);
                 }
             }
 
@@ -45,18 +42,15 @@ namespace CustomUtility.ConsoleUtility
                 foreach (var method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
                     var attr = method.GetCustomAttribute<Attributes.ConsoleCommandAttribute>();
-                    if (attr != null)
-                    {
-                        RegisterCommand(method, mono, attr);
-                        Debug.Log($"Registering instance command: {attr.CommandName} from {type.Name}");
-                    }
+                    if (attr == null) continue;
+                    RegisterCommand(method, mono, attr);
                 }
             }
         }
 
         private static void RegisterCommand(MethodInfo method, object target, Attributes.ConsoleCommandAttribute attr)
         {
-            string key = attr.CommandName.ToLower();
+            var key = attr.CommandName.ToLower();
             if (Commands.ContainsKey(key)) return;
 
             Commands[key] = new CommandInfo

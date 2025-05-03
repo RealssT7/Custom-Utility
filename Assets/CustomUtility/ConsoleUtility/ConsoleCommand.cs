@@ -35,11 +35,7 @@ namespace CustomUtility.ConsoleUtility
             return sb.ToString();
         }
 
-        // Helper method to pad the text to the required width
-        private static string Pad(string text, int width)
-        {
-            return text.Length >= width ? text[..width] : text.PadRight(width);
-        }
+        private static string Pad(string text, int width) => text.Length >= width ? text[..width] : text.PadRight(width);
 
         private static string SimplifyType(Type type)
         {
@@ -63,11 +59,10 @@ namespace CustomUtility.ConsoleUtility
         [ConsoleCommand("clear", "Clears the console output.")]
         public static string Clear()
         {
-            //DevConsoleEvents.OnClearConsole?.Invoke();
             return "Console cleared.";
         }
 
-        [ConsoleCommand("echo", "Echoes the input text back.")]
+        [ConsoleCommand("echo", "Prints the input text back.")]
         public static string Echo(string text)
         {
             return text;
