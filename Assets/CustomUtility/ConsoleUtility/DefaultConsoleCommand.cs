@@ -1,16 +1,22 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
 using System.Text;
 using CustomUtility.ConsoleUtility.Attributes;
+using CustomUtility.ConsoleUtility.Editor;
+using UnityEngine;
 
 namespace CustomUtility.ConsoleUtility
 {
-    public static class ConsoleCommands
+    public static class DefaultConsoleCommand
     {
+        #region HelpCommand
+
         private const int CommandColumnWidth = 35;
-        private const string SeparatorLine = "--------------------------------------------------------------------------------";
+
+        private const string SeparatorLine =
+            "--------------------------------------------------------------------------------";
+
         private const string CommandHeader = "Command (Params)";
         private const string DescriptionHeader = "Description";
 
@@ -35,7 +41,10 @@ namespace CustomUtility.ConsoleUtility
             return sb.ToString();
         }
 
-        private static string Pad(string text, int width) => text.Length >= width ? text[..width] : text.PadRight(width);
+        private static string Pad(string text, int width)
+        {
+            return text.Length >= width ? text[..width] : text.PadRight(width);
+        }
 
         private static string SimplifyType(Type type)
         {
@@ -50,15 +59,18 @@ namespace CustomUtility.ConsoleUtility
                 { typeof(Vector2), "Vector2" },
                 { typeof(Vector3), "Vector3" },
                 { typeof(Quaternion), "Quaternion" },
-                { typeof(Color), "Color" },
+                { typeof(Color), "Color" }
             };
 
             return typeMap.TryGetValue(type, out var simplified) ? simplified : type.Name;
         }
 
+        #endregion
+
         [ConsoleCommand("clear", "Clears the console output.")]
         public static string Clear()
         {
+            ConsoleUtility.ClearConsole();
             return "Console cleared.";
         }
 
@@ -68,18 +80,17 @@ namespace CustomUtility.ConsoleUtility
             return text;
         }
 
-        [ConsoleCommand("teleport", "Teleports the player to a given position (x y z).")]
-        public static string Teleport(float x, float y, float z)
+        [ConsoleCommand("player_teleport", "Teleports the player to a given position (x y z).")]
+        public static string Teleport(Vector3 position)
         {
             var player = GameObject.FindWithTag("Player");
-            if (player == null)
-                return "Player not found.";
+            if (player == null) return "Player not found.";
 
-            player.transform.position = new Vector3(x, y, z);
-            return $"Teleported player to ({x}, {y}, {z})";
+            player.transform.position = new Vector3(position.x, position.y, position.z);
+            return $"Teleported player to ({position.x}, {position.y}, {position.z})";
         }
 
-        [ConsoleCommand("get_position", "Gets the player's current position.")]
+        [ConsoleCommand("player_position", "Gets the player's current position.")]
         public static string GetPosition()
         {
             var player = GameObject.FindWithTag("Player");
