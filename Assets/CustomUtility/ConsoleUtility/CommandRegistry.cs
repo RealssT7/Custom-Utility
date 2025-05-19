@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace CustomUtility.ConsoleUtility.Editor
@@ -52,37 +51,33 @@ namespace CustomUtility.ConsoleUtility.Editor
         /// A dictionary containing all registered commands, keyed by their lowercase names.
         /// </summary>
         public static readonly Dictionary<string, CommandInfo> Commands = new();
-
-        /// <summary>
-        /// Registers all console commands in the current application domain.
-        /// This method is automatically called after the scene is loaded.
-        /// </summary>
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        public static void RegisterAllCommands()
+        
+        public static void Initialize(ConsoleSettings config)
         {
-            Commands.Clear();
-            var allTypes = AppDomain.CurrentDomain
-                .GetAssemblies()
+            Commands.Clear();            
+            if (config.Mode == ConsoleSettings.ExecutionMode.Reflection) RegisterViaReflection();
+            else CommandRegistered.Register();
+        }
+
+        private static void RegisterViaReflection()
+        {
+            var allTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(asm => asm.GetTypes());
 
             foreach (var type in allTypes)
             {
-                // Register static methods as commands.
                 RegisterCommandsFromType(
                     type,
                     BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic,
-                    () => null
-                );
+                    () => null);
 
-                // Register instance methods as commands.
                 RegisterCommandsFromType(
                     type,
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                    () => Object.FindObjectsOfType(type)
-                );
+                    () => Object.FindObjectsOfType(type));
             }
         }
-
+        
         /// <summary>
         /// Registers all methods marked with the ConsoleCommandAttribute from a given type.
         /// </summary>
@@ -114,7 +109,7 @@ namespace CustomUtility.ConsoleUtility.Editor
         /// <param name="method">The method associated with the command.</param>
         /// <param name="target">The target object for the command (if applicable).</param>
         /// <param name="targetGetter">A function to retrieve potential target objects for instance methods.</param>
-        private static void RegisterCommand(string command, string description, MethodInfo method, object target, Func<IEnumerable<object>> targetGetter)
+        internal static void RegisterCommand(string command, string description, MethodInfo method, object target, Func<IEnumerable<object>> targetGetter)
         {
             // Convert the command name to lowercase for consistent key storage.
             var key = command.ToLower();

@@ -11,15 +11,7 @@ namespace CustomUtility.ConsoleUtility
     public static class DefaultConsoleCommand
     {
         #region HelpCommand
-
-        private const int CommandColumnWidth = 35;
-
-        private const string SeparatorLine =
-            "--------------------------------------------------------------------------------";
-
-        private const string CommandHeader = "Command (Params)";
-        private const string DescriptionHeader = "Description";
-
+        
         [ConsoleCommand("help", "Lists all available console commands.")]
         public static string Help()
         {
@@ -27,23 +19,20 @@ namespace CustomUtility.ConsoleUtility
             var sb = new StringBuilder();
 
             sb.AppendLine("Available Commands:");
-            sb.AppendLine(SeparatorLine);
-            sb.AppendLine($"{Pad(CommandHeader, CommandColumnWidth)} {DescriptionHeader}");
-            sb.AppendLine(SeparatorLine);
+            sb.Append(new string('=', 45));
 
             foreach (var cmd in commands)
             {
                 var paramList = string.Join(", ", cmd.Parameters.Select(p => SimplifyType(p.ParameterType)));
-                var commandWithParams = paramList.Length > 0 ? $"{cmd.Name}({paramList})" : cmd.Name;
-                sb.AppendLine($"{commandWithParams,-CommandColumnWidth} {cmd.Description}");
+                var commandSignature = paramList.Length > 0 ? $"{cmd.Name}({paramList})" : cmd.Name;
+
+                sb.AppendLine();
+                sb.AppendLine(commandSignature);
+                sb.AppendLine($"    {cmd.Description}");
+                sb.Append(new string('-', 45));
             }
 
             return sb.ToString();
-        }
-
-        private static string Pad(string text, int width)
-        {
-            return text.Length >= width ? text[..width] : text.PadRight(width);
         }
 
         private static string SimplifyType(Type type)
@@ -66,13 +55,6 @@ namespace CustomUtility.ConsoleUtility
         }
 
         #endregion
-
-        [ConsoleCommand("clear", "Clears the console output.")]
-        public static string Clear()
-        {
-            ConsoleUtility.ClearConsole();
-            return "Console cleared.";
-        }
 
         [ConsoleCommand("echo", "Prints the input text back.")]
         public static string Echo(string text)

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a81f2d22c51580438bd1aff8d898f7e, type: 3}
+  m_Name: COS_Input
+  m_EditorClassIdentifier: 
+  StyleName: Input
+  Keywords: []
+  TextColor: {r: 0.3216002, g: 0.9339623, b: 0.86377716, a: 1}

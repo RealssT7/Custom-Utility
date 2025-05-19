@@ -34,14 +34,16 @@ namespace CustomUtility.ConsoleUtility.Editor
         public static string Execute(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
-                return "No command.";
+                return "No Command.";
 
             input = input.Trim().ToLower();
 
-            if (!IsAwaitingTargetSelection()) return HandleCommandInput(input);
+            if (!IsAwaitingTargetSelection()) 
+                return HandleCommandInput(input);
+            
             return input is not "cancel" ? HandleSelectionInput(input) : ResetParser();
         }
-        
+
         /// <summary>
         ///     Resets the parser state, clearing any pending command or target information.
         /// </summary>
@@ -100,20 +102,27 @@ namespace CustomUtility.ConsoleUtility.Editor
                 return error;
 
             return info.Method.IsStatic
-                ? InvokeStaticCommand(info, parsedArgs)
+                ? InvokeCommand(info, parsedArgs)
                 : HandleInstanceCommand(commandName, info, parsedArgs);
         }
 
         /// <summary>
-        ///     Invokes a static command method.
+        ///     Invokes a command method with the provided arguments.
         /// </summary>
         /// <param name="info">The command information.</param>
         /// <param name="args">The arguments for the command.</param>
         /// <returns>A string indicating the result of the command execution.</returns>
-        private static string InvokeStaticCommand(CommandRegistry.CommandInfo info, object[] args)
+        private static string InvokeCommand(CommandRegistry.CommandInfo info, object[] args)
         {
-            Debug.Log($"[Console] Executing static command: {info.Method.Name}");
-            return InvokeCommand(info, args);
+            try
+            {
+                var result = info.Method.Invoke(info.Target, args);
+                return result?.ToString() ?? "Command executed.";
+            }
+            catch (Exception ex)
+            {
+                return $"Command failed: {ex.InnerException?.Message ?? ex.Message}";
+            }
         }
 
         /// <summary>
@@ -129,7 +138,8 @@ namespace CustomUtility.ConsoleUtility.Editor
             if (targets == null || targets.Count == 0)
                 return "No valid targets found.";
 
-            if (targets.Count != 1) return HandleMultipleTargets(commandName, args, targets);
+            if (targets.Count != 1) 
+                return HandleMultipleTargets(commandName, args, targets);
 
             info.Target = targets[0];
             return InvokeCommand(info, args);
@@ -183,25 +193,6 @@ namespace CustomUtility.ConsoleUtility.Editor
             finally
             {
                 ResetParser();
-            }
-        }
-
-        /// <summary>
-        ///     Invokes a command method with the provided arguments.
-        /// </summary>
-        /// <param name="info">The command information.</param>
-        /// <param name="args">The arguments for the command.</param>
-        /// <returns>A string indicating the result of the command execution.</returns>
-        private static string InvokeCommand(CommandRegistry.CommandInfo info, object[] args)
-        {
-            try
-            {
-                var result = info.Method.Invoke(info.Target, args);
-                return result?.ToString() ?? "Command executed.";
-            }
-            catch (Exception ex)
-            {
-                return $"Command failed: {ex.InnerException?.Message ?? ex.Message}";
             }
         }
 
@@ -280,7 +271,6 @@ namespace CustomUtility.ConsoleUtility.Editor
                             comp.gameObject.AddComponent<CommandTargetIndicator>();
 
             indicator.Index = index + 1;
-
             return $"{index + 1}. {comp.GetType().Name} on GameObject '{comp.gameObject.name}'\n";
         }
 
